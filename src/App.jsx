@@ -1,10 +1,12 @@
 import { Button, Container, Flex, Input, Item, Spacer } from './styles';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 function App() {
+
   const [tarefa, setTarefa] = useState('');
-  const [listaTarefa, setListTarefa] = useState([]); 
+  const [listTarefa, setListTarefa] = useState([]);
+  const [token, setToken] = useState('')
 
   // const adcTarefa = () => {
   //   if (!tarefa) return alert('Preencha uma tarefa');
@@ -18,7 +20,7 @@ function App() {
   // };
 
   // const removeTarefa = (id) => {
-  //   const newList = listaTarefa.filter((tarefa) => tarefa.id !== id);
+  //   const newList = listTarefa.filter((tarefa) => tarefa.id !== id);
   //   setListTarefa(newList);
   // };
 
@@ -28,6 +30,136 @@ function App() {
   //   newList[index].checked = !checked;
   //   setListTarefa([...newList]);
   // };
+
+
+
+  function completeTask(id, completed) {
+
+    let headers = {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+
+    const taskToUpdate = {
+      completed: !completed
+    }
+
+    axios.put(`https://ctd-fe2-todo-v2.herokuapp.com/v1/tasks/${id}`, taskToUpdate, headers).then(
+      task => {
+
+        setListTarefa(listTarefa.map(
+          tarefa => {
+
+            if(tarefa.id === task.data.id) {
+
+              tarefa = task.data
+
+            }
+
+            return tarefa
+
+          }
+        ))
+
+      }
+    )
+
+  }
+
+
+
+  function createTask() {
+
+    let headers = {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+
+    const taskToCreate = {
+      description: tarefa,
+      completed: false
+    }
+
+    axios.post('https://ctd-fe2-todo-v2.herokuapp.com/v1/tasks', taskToCreate, headers).then(
+      task => {
+        setListTarefa([...listTarefa, task.data])
+        setTarefa('')
+      }
+    )
+
+  }
+
+
+
+  function deleteTask(id) {
+
+    let headers = {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+
+    axios.delete(`https://ctd-fe2-todo-v2.herokuapp.com/v1/tasks/${id}`, headers).then(
+      task => {
+
+        setListTarefa(listTarefa.filter( tarefa => tarefa.id !== id ))
+
+      }
+    )
+
+  }
+
+
+
+  // Login
+  useEffect(() => {
+
+    const loginCredentials = {
+      email: "usertestefiaperson@gmail.com",
+      password: "string"
+    }
+
+    axios.post('https://ctd-fe2-todo-v2.herokuapp.com/v1/users/login', loginCredentials).then(
+      response => {
+
+        setToken(response.data.jwt)
+      }
+    )
+
+  }, [])
+
+
+
+  useEffect(() => {
+
+    if(token !== '') {
+
+      let headers = {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token
+        }
+      }
+
+      axios.get('https://ctd-fe2-todo-v2.herokuapp.com/v1/tasks', headers).then(
+        tasks => {
+          console.log(tasks)
+          setListTarefa(tasks.data)
+        }
+      )
+
+    }
+
+  }, [token])
 
   return (
     <Container>
@@ -40,29 +172,37 @@ function App() {
           placeholder="Digite sua tarefa"
           onChange={(e) => setTarefa(e.target.value)}
         />
-        <Button onClick={adcTarefa}>Adicionar</Button>
+        <Button onClick={createTask}>Adicionar</Button>
       </Flex>
       <Spacer margin="16px" />
 
       <ul>
-        {listaTarefa.map((tarefa) => (
-          <>
-            <Item Item checked={tarefa.checked} key={tarefa.id}>
-              <p>{tarefa.tarefa}</p>
-              <Flex direction="row">
-                <button
-                  onClick={() => toggleChecked(tarefa.id, tarefa.checked)}
-                >
-                  <i class="bx bx-check "></i>
-                </button>
-                <button onClick={() => removeTarefa(tarefa.id)}>
-                  <i class="bx bx-trash "></i>
-                </button>
-              </Flex>
-            </Item>
-            <Spacer margin="12px" />
-          </>
-        ))}
+        {
+          listTarefa.length > 0 ? (
+            listTarefa.map((tarefa, index) => (
+
+              <div key={index}>
+                <Item Item checked={tarefa.completed}>
+                  <p>{tarefa.description}</p>
+                  <Flex direction="row">
+                    <button
+                      onClick={() => completeTask(tarefa.id, tarefa.completed)}
+                    >
+                      <i className="bx bx-check "></i>
+                    </button>
+                    <button onClick={() => deleteTask(tarefa.id)}>
+                      <i className="bx bx-trash "></i>
+                    </button>
+                  </Flex>
+                </Item>
+                <Spacer margin="12px" />
+              </div>
+
+            ))
+          ) : (
+            <p>Cadastre uma tarefa</p>
+          )
+        }
       </ul>
     </Container>
   );

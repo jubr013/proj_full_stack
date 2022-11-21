@@ -12,7 +12,7 @@ export const GlobalStyle = createGlobalStyle`
 
 export const Container = styled.div`
   width: 100%;
-  min-height: 895px;
+  min-height: 100vh;
   background: rgba(0, 0, 0, 0.1);
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   border-radius: 10px;
